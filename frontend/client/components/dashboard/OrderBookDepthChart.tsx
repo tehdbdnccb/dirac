@@ -102,7 +102,7 @@ export function OrderBookDepthChart() {
                 color: '#f3f4f6'
               }}
               itemStyle={{ color: '#f3f4f6' }}
-              labelFormatter={(label) => `Price: ${label.toLocaleString()}`}
+              labelFormatter={(label) => label == null ? 'Price' : `Price: ${label.toLocaleString()}`}
             />
             
             {/* Bid Area - Green */}

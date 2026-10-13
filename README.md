@@ -16,7 +16,7 @@ Unlike standard web3 applications that rely on heavy JSON-RPC polling and standa
 *   **Vectorized Quant Math:** Utilizes AVX-512 SIMD intrinsics in C++ to compute multi-dimensional **Hawkes Self-Exciting Point Processes** and **Avellaneda-Stoikov** inventory models concurrently, without branching.
 *   **Anchor Bytemuck Deserialization:** Smart contracts use `bytemuck` to cast raw account data buffers directly to Rust structs in $O(1)$ time, saving tens of thousands of Compute Units (CUs) over standard `AccountDeserialize`.
 *   **Mempool Bypass:** All dynamic bin rebalancing and liquidity shifting on Meteora is routed through atomic Jito bundles, guaranteeing execution order and preventing searcher front-running.
-*   **Sub-Microsecond Telemetry:** Next.js dashboard powered by Zustand and WebSockets visualizes live order book depth and pipeline latency without triggering excessive React render cycles.
+*   **Live Telemetry Dashboard:** React dashboard powered by Zustand, Recharts, and WebSockets visualizes order book depth, Meteora DLMM bin utilization, and pipeline latency.
 
 ---
 
@@ -35,7 +35,7 @@ When the Hawkes intensity breaches toxicity thresholds, the engine builds an Anc
 Continuously sweeps account collateral against mark prices. If maintenance margins are breached, the lock-free liquidation queue natively dispatches execution orders to square the position before the next block.
 
 ### 5. Live Telemetry Dashboard
-A Next.js 15 interface providing Colosseum judges and node operators visual proof of the system's performance, including a live DLMM bin distribution chart, dynamic APY fee tracking, and a hardware latency gauge.
+A React and Vite interface provides a live DLMM bin distribution chart, market depth, and an engine latency gauge.
 
 ---
 
@@ -48,31 +48,25 @@ A Next.js 15 interface providing Colosseum judges and node operators visual proo
 *   Node.js 20+ & pnpm
 *   Solana CLI (`v2.0+`)
 
-### 1. Compile the Backend (Rust + C++ FFI)
-The `build.rs` script will automatically compile the AVX-512 engine and generate the FFI bindings.
+### 1. Start the Telemetry Dashboard
+The frontend is a Vite app. Its Vercel project root should be set to `frontend`.
 ```bash
-# Clone the repository
-git clone [https://github.com/your-username/aegis-dlmm.git](https://github.com/your-username/aegis-dlmm.git)
-cd aegis-dlmm/backend
+cd frontend
+npm install
+npm run dev
+```
 
-# Build with ultra-low latency release profile
-cargo build --release
-Run the Engine
-Requires root privileges for CPU core pinning and SCHED_FIFO real-time priorities.
+The dashboard build can be checked with `npm run build`. Configure
+`VITE_TELEMETRY_WS_URL` to the backend WebSocket endpoint (for example,
+`ws://localhost:3000/ws/book` locally or `wss://your-api.example.com/ws/book`
+in a deployed environment). Without an endpoint the dashboard builds normally
+and shows the telemetry panels in their disconnected state.
 
-Bash
-export SOLANA_RPC_URL="[https://api.mainnet-beta.solana.com](https://api.mainnet-beta.solana.com)"
-export SOLANA_WALLET_PATH="~/.config/solana/aegis_clearing.json"
+### 2. Compile the Backend (Rust + C++ FFI)
+Build the Rust/C++ backend using the repository's Cargo project and release
+profile. Configure `SOLANA_RPC_URL` and `SOLANA_WALLET_PATH` for the runtime.
 
-sudo -E ./target/release/aegis-engine-backend
-3. Start the Next.js Telemetry Dashboard
-Bash
-cd ../frontend
-pnpm install
-pnpm run dev
-Navigate to http://localhost:3000 to view the live bin utilization and latency gauges.
-
-4. Run the Hardware Latency Profiler (Stress Test)
+### 3. Run the Hardware Latency Profiler (Stress Test)
 To verify cache-miss ratios and CPU core stability during the hackathon judging:
 
 Bash
